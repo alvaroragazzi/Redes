@@ -1,5 +1,7 @@
+-- Classe Calculadora
 local Calculadora = {}
 
+-- mascaras
 local Mascaras = {
 	[1] = { 127, 255, 255, 255 },
 	[2] = { 63, 255, 255, 255 },
@@ -34,6 +36,7 @@ local Mascaras = {
 	[31] = { 0, 0, 0, 1 }
 }
 
+-- mascaras de sub rede para cada classe de ip
 local subMasks = {
     ["A"] = "255.0.0.0",
     ["B"] = "255.255.0.0",
@@ -42,6 +45,7 @@ local subMasks = {
     ["E"] = nil
 }
 
+-- função para separar uma string, pois lua não possui essa função implementada
 local function strSplit(inputStr, separador)
     local tbl = {}
     for v in string.gmatch(inputStr, "([^"..separador.."]+)") do
@@ -50,6 +54,7 @@ local function strSplit(inputStr, separador)
     return tbl
 end
 
+-- função para transformar uma array em string
 local function strUnsplit(array, separador)
     local str = ""
     for i,v in pairs(array) do
@@ -62,11 +67,13 @@ local function strUnsplit(array, separador)
     return str
 end
 
+-- construtor da classe Calculadora, retorna objeto Calculadora
 function Calculadora.new(IP, Mascara)
     if not IP:find("(%d+).(%d+).(%d+).(%d+)") then
         error("IP inválido")
     end
 
+    -- retornando objeto da classe Calculadora
     return setmetatable({
         IP = strSplit(IP, "."),
         Mascara = Mascara
@@ -75,10 +82,12 @@ function Calculadora.new(IP, Mascara)
     })
 end
 
+-- função que retorna o IP junto com a máscara
 function Calculadora:getIP()
-    return  strUnsplit(self.IP, ".").."/"..self.Mascara
+    return strUnsplit(self.IP, ".").."/"..self.Mascara
 end
 
+-- função que retorna o endereço de rede
 function Calculadora:getNetworkIP()
     local sub = Mascaras[self.Mascara]
 
@@ -97,8 +106,13 @@ function Calculadora:getNetworkIP()
 end
 
 function Calculadora:getBroadcast()
+    -- string que será retornada no final
     local broadcast = ""
+
+    -- pegando a mascara de acordo com a mascara informada pelo usuário
     local sub = Mascaras[self.Mascara]
+
+    -- pegando o IP de rede e transformando em array, pois precisaremos verificar todos os octetos
     local networkIp = strSplit(self:getNetworkIP(), ".")
 
     for i,v in pairs(networkIp) do
@@ -112,17 +126,24 @@ function Calculadora:getBroadcast()
     return broadcast
 end
 
+-- função que retorna a range do ip informado
 function Calculadora:getRange()
+    -- pegando o IP de rede e o broadcast, pois iremos precisar deles
     local IP = strSplit(self:getNetworkIP(), ".")
     local Broadcast = strSplit(self:getBroadcast(), ".")
 
+    -- somando mais 1 no quarto octeto do IP da rede, pois 0 não pode ser usado
     IP[4] = IP[4] + 1
+
+    -- subtraindo 1 do quarto octeto do broadcast, pois 255 não pode ser usado
     Broadcast[4] = Broadcast[4] - 1
 
+    -- retornando a range do ip em forma de string
     return strUnsplit(IP, ".").." - "..strUnsplit(Broadcast, ".")
 end
 
 function Calculadora:getClasse()
+    -- pegando o primeiro octeto do IP para verificar a classe
     local ip = tonumber(self.IP[1])
 
     if (ip >= 0 and ip <= 127) then
@@ -139,11 +160,14 @@ function Calculadora:getClasse()
 end
 
 function Calculadora:getMascara()
+    -- retorna a mascara de sub rede do IP informado de acordo com a classe dele
     return subMasks[self:getClasse()]
 end
 
+-- criando o objeto da classe Calculadora
 local calc = Calculadora.new("192.168.102.54", 24)
 
+-- imprimindo os resultados na tela
 print(
     "IP: "..calc:getIP().."\n"..
     "Endereço da rede: "..calc:getNetworkIP().."\n"..
