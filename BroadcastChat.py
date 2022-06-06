@@ -6,8 +6,8 @@ from datetime import datetime
  
 thread = threading.Event()
  
-def decode(json):
-    return json.loads(json.decode())
+def decode(dados):
+    return json.loads(dados.decode())
  
 def encode(username, message):
     return json.dumps({
